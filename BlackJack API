@@ -1,0 +1,79 @@
+import io.restassured.RestAssured;
+import io.restassured.response.Response;
+
+import java.util.List;
+import java.util.Map;
+
+public class DeckOfCardsGame {
+
+    public static void main(String[] args) {
+
+        // Step 1: Confirm site is up
+        Response healthCheck = RestAssured.get("https://deckofcardsapi.com/");
+        if (healthCheck.getStatusCode() == 200) {
+            System.out.println("✅ Site is up.");
+        } else {
+            System.out.println("❌ Site is down.");
+            return;
+        }
+
+        // Step 2: Get a new deck
+        Response newDeckResponse = RestAssured
+                .given()
+                .get("https://deckofcardsapi.com/api/deck/new/");
+        String deckId = newDeckResponse.jsonPath().getString("deck_id");
+        System.out.println("New deck ID: " + deckId);
+
+        // Step 3: Shuffle the deck
+        RestAssured
+                .given()
+                .get("https://deckofcardsapi.com/api/deck/" + deckId + "/shuffle/");
+
+        // Step 4: Draw 6 cards (3 for each player)
+        Response drawResponse = RestAssured
+                .given()
+                .get("https://deckofcardsapi.com/api/deck/" + deckId + "/draw/?count=6");
+
+        List<Map<String, String>> cards = drawResponse.jsonPath().getList("cards");
+
+        List<Map<String, String>> player1Cards = cards.subList(0, 3);
+        List<Map<String, String>> player2Cards = cards.subList(3, 6);
+
+        System.out.println("\n🎴 Player 1 Cards:");
+        player1Cards.forEach(card -> System.out.println(card.get("value") + " of " + card.get("suit")));
+
+        System.out.println("\n🎴 Player 2 Cards:");
+        player2Cards.forEach(card -> System.out.println(card.get("value") + " of " + card.get("suit")));
+
+        // Step 5: Check for blackjack
+        boolean player1Blackjack = hasBlackjack(player1Cards);
+        boolean player2Blackjack = hasBlackjack(player2Cards);
+
+        // Step 6: Output results
+        System.out.println();
+        if (player1Blackjack && player2Blackjack) {
+            System.out.println("🔥 Both players have blackjack!");
+        } else if (player1Blackjack) {
+            System.out.println("🏆 Player 1 has blackjack!");
+        } else if (player2Blackjack) {
+            System.out.println("🏆 Player 2 has blackjack!");
+        } else {
+            System.out.println("❌ No blackjack this round.");
+        }
+    }
+
+    // Blackjack = 1 Ace + 10/J/Q/K in hand
+    private static boolean hasBlackjack(List<Map<String, String>> cards) {
+        boolean hasAce = false;
+        boolean hasTenCard = false;
+
+        for (Map<String, String> card : cards) {
+            String value = card.get("value");
+            if (value.equals("ACE")) hasAce = true;
+            if (value.equals("10") || value.equals("JACK") || value.equals("QUEEN") || value.equals("KING"))
+                hasTenCard = true;
+        }
+
+        return hasAce && hasTenCard;
+    }
+}
