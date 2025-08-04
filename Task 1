@@ -1,0 +1,65 @@
+package com.assesment.org;
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+ 
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
+ 
+
+public class CheckersGame {
+
+    public static void main(String[] args) throws InterruptedException {
+        // Set ChromeDriver path
+        System.setProperty("webdriver.chrome.driver", "C:\\Users\\arun.k\\eclipse-workspace\\Assesment\\driver\\chromedriver.exe");
+        WebDriver driver = new ChromeDriver();
+        driver.manage().window().maximize();
+
+        // Open game
+        driver.get("https://www.gamesforthebrain.com/game/checkers/");
+        Thread.sleep(2000);
+
+        // Check if page is loaded
+        if (!driver.getTitle().contains("Checkers")) {
+            System.out.println("Failed to load game");
+            driver.quit();
+            return;
+        }
+
+        System.out.println("Game loaded successfully");
+
+        // Make 5 moves
+        move(driver, 4, 2, 5, 3);  // C3 -> D4
+        move(driver, 6, 2, 7, 3);  // E3 -> F4
+        move(driver, 5, 1, 6, 2);  // F2 -> G3
+        move(driver, 3, 3, 5, 5);  // D4 -> F6 (capture)
+        move(driver, 2, 2, 3, 3);  // C2 -> D3
+
+        // Restart game
+        driver.findElement(By.linkText("Restart")).click();
+        Thread.sleep(2000);
+
+        // Confirm restart
+        WebElement cell = driver.findElement(By.xpath("//table//tr[3]/td[2]/img"));
+        String piece = cell.getAttribute("src");
+        if (piece.contains("orange")) {
+            System.out.println("Game restarted successfully");
+        } else {
+            System.out.println("Game restart failed");
+        }
+
+        driver.quit();
+    }
+
+    public static void move(WebDriver driver, int fromRow, int fromCol, int toRow, int toCol) throws InterruptedException {
+        String from = "//table//tr[" + fromRow + "]/td[" + fromCol + "]";
+        String to = "//table//tr[" + toRow + "]/td[" + toCol + "]";
+
+        driver.findElement(By.xpath(from)).click();
+        Thread.sleep(500);
+        driver.findElement(By.xpath(to)).click();
+        Thread.sleep(500);
+        driver.findElement(By.linkText("Make a move")).click();
+        Thread.sleep(2000);
+    }
+}
